@@ -8,10 +8,10 @@ pydub
 watchdog
 tavily-python
 lancedb
-sentence-transformers
+fastembed
 groq
 pytz
-opencv-python
+opencv-python-headless
 python-pptx
 pandas
 openpyxl

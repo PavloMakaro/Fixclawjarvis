@@ -16,7 +16,7 @@ class VectorMemory:
 
         try:
             import lancedb
-            from sentence_transformers import SentenceTransformer
+            from fastembed import TextEmbedding
 
             # Ensure directory exists
             if not os.path.exists(persist_path):
@@ -27,9 +27,10 @@ class VectorMemory:
             self.table_name = table_name
 
             # Initialize Embedding Model (using a small, fast model)
-            # This might download the model on first run
-            logger.info("Loading embedding model (all-MiniLM-L6-v2)...")
-            self.model = SentenceTransformer('all-MiniLM-L6-v2')
+            # FastEmbed uses ONNX Runtime which is lighter than PyTorch
+            logger.info("Loading embedding model (BAAI/bge-small-en-v1.5)...")
+            # This downloads the model (~100MB) on first run
+            self.model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
 
             # Open or Create Table
             if table_name in self.db.table_names():
@@ -42,11 +43,11 @@ class VectorMemory:
                 pass
 
             self.enabled = True
-            logger.info(f"Vector Memory (LanceDB) initialized at {persist_path}")
+            logger.info(f"Vector Memory (LanceDB + FastEmbed) initialized at {persist_path}")
 
         except ImportError as e:
-            logger.error(f"Failed to import lancedb or sentence_transformers: {e}")
-            logger.error("Please install dependencies: pip install lancedb sentence-transformers")
+            logger.error(f"Failed to import lancedb or fastembed: {e}")
+            logger.error("Please install dependencies: pip install lancedb fastembed")
             self.enabled = False
         except Exception as e:
             logger.error(f"Vector Memory initialization failed: {e}")
@@ -56,7 +57,13 @@ class VectorMemory:
     def _get_embedding(self, text):
         if not self.model:
             return None
-        return self.model.encode(text).tolist()
+        # FastEmbed returns a generator of vectors
+        try:
+            embedding_gen = self.model.embed([text])
+            return list(embedding_gen)[0].tolist()
+        except Exception as e:
+            logger.error(f"Embedding error: {e}")
+            return None
 
     def add(self, text, metadata=None):
         if not self.enabled:
