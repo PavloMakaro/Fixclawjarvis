@@ -1,0 +1,17 @@
+python-telegram-bot[job-queue]
+requests
+yt-dlp
+openai
+beautifulsoup4
+schedule
+pydub
+watchdog
+tavily-python
+lancedb
+sentence-transformers
+groq
+pytz
+opencv-python
+python-pptx
+pandas
+openpyxl
